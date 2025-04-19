@@ -61,11 +61,10 @@ async def upload_files(files: List[UploadFile] = File(...)):
                 client.collections.create(
                     name=class_name,
                     properties=[
-                        # Use dataType instead of data_type for Weaviate Python client v4
-                        # dataType should be an array of strings
-                        {"name": "filename", "dataType": ["text"]},
-                        {"name": "content", "dataType": ["text"]},
-                        {"name": "uploaded_at", "dataType": ["date"]}
+                        # Use data_type (snake_case) as expected by the Weaviate API
+                        {"name": "filename", "data_type": "text"},
+                        {"name": "content", "data_type": "text"},
+                        {"name": "uploaded_at", "data_type": "date"}
                     ]
                 )
                 print(f"Collection {class_name} created successfully")
