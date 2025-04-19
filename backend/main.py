@@ -1,6 +1,7 @@
 import os
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import weaviate
 from typing import List
@@ -16,6 +17,15 @@ WEAVIATE_URL = os.getenv("WEAVIATE_URL")
 WEAVIATE_API_KEY = os.getenv("WEAVIATE_API_KEY")
 
 app = FastAPI()
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
 
 @app.on_event("startup")
 async def startup_event():

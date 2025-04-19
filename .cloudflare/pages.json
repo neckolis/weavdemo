@@ -1,0 +1,21 @@
+{
+  "name": "weaviatedemo",
+  "build": {
+    "command": "npm run build",
+    "output_directory": "dist",
+    "root_directory": "/"
+  },
+  "routes": [
+    {
+      "pattern": "/api/*",
+      "forward": {
+        "url": "https://weaviatedemo-backend.onrender.com"
+      }
+    },
+    {
+      "pattern": "/*",
+      "serve": "/index.html",
+      "status": 200
+    }
+  ]
+}

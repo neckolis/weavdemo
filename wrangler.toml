@@ -1,8 +1,18 @@
 name = "weaviatedemo"
-type = "javascript"
-account_id = ""
-workers_dev = false
+type = "webpack"
+account_id = "" # Add your Cloudflare account ID here
 compatibility_date = "2025-04-19"
 
-[env.production]
+[site]
 bucket = "./dist"
+entry-point = "workers-site"
+
+[build]
+command = "npm run build"
+publish = "dist"
+
+[env.production]
+# Production-specific settings
+
+[env.development]
+# Development-specific settings

@@ -38,7 +38,11 @@ const FileUploader = ({ onFilesUploaded }: FileUploaderProps) => {
     const formData = new FormData();
     uploadFiles.forEach(file => formData.append('files', file));
     try {
-      const response = await fetch('/api/upload', {
+      // Use environment variable for API URL if available, otherwise use relative path
+      const apiUrl = process.env.VITE_API_URL || '';
+      const uploadUrl = apiUrl ? `${apiUrl}/upload` : '/api/upload';
+
+      const response = await fetch(uploadUrl, {
         method: 'POST',
         body: formData,
       });
@@ -83,18 +87,18 @@ const FileUploader = ({ onFilesUploaded }: FileUploaderProps) => {
       <div
         {...getRootProps()}
         className={`border-2 border-dashed rounded-xl p-8 cursor-pointer transition-all duration-200 text-center ${
-          isDragActive 
-            ? 'border-primary bg-primary/5 animate-pulse-slow' 
+          isDragActive
+            ? 'border-primary bg-primary/5 animate-pulse-slow'
             : 'border-muted-foreground/30 hover:border-primary hover:bg-primary/5'
         }`}
       >
         <input {...getInputProps()} />
-        
+
         <div className="flex flex-col items-center gap-3">
           <div className="rounded-full bg-primary/10 p-3">
             <Upload className="h-6 w-6 text-primary" />
           </div>
-          
+
           <div className="space-y-1 text-center">
             <p className="text-sm font-medium">
               {isDragActive ? "Drop files here ..." : "Drag & drop files here"}
@@ -103,10 +107,10 @@ const FileUploader = ({ onFilesUploaded }: FileUploaderProps) => {
               Upload PDF, DOC, DOCX or TXT files (max 10MB)
             </p>
           </div>
-          
-          <Button 
-            size="sm" 
-            variant="outline" 
+
+          <Button
+            size="sm"
+            variant="outline"
             type="button"
             className="mt-2"
           >
@@ -118,7 +122,7 @@ const FileUploader = ({ onFilesUploaded }: FileUploaderProps) => {
       {files.length > 0 && (
         <div className="mt-5 space-y-3 animate-fade-in">
           <p className="text-sm font-medium">Uploaded files:</p>
-          
+
           <div className="space-y-2">
             {files.map((file, index) => (
               <Card key={`${file.name}-${index}`} className="flex items-center justify-between p-3 animate-fade-in-up">
@@ -131,10 +135,10 @@ const FileUploader = ({ onFilesUploaded }: FileUploaderProps) => {
                     </p>
                   </div>
                 </div>
-                
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
                     removeFile(file);

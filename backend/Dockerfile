@@ -12,7 +12,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Expose the port Cloud Run expects
-EXPOSE 8080
+# Default port - can be overridden with environment variable
+ENV PORT=8000
+EXPOSE ${PORT}
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+# Use environment variable for port to make it configurable
+CMD uvicorn main:app --host 0.0.0.0 --port ${PORT}
