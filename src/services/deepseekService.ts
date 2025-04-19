@@ -5,10 +5,15 @@ const DEEPSEEK_API_KEY = import.meta.env.VITE_DEEPSEEK_API_KEY || '';
 const DEEPSEEK_API_BASE = import.meta.env.VITE_DEEPSEEK_API_BASE || 'https://api.deepseek.com/v1';
 const BACKEND_URL = import.meta.env.VITE_API_URL || '';
 
+// SECURITY NOTE: In a production environment, you should NOT expose API keys in the frontend.
+// A better approach would be to create a backend proxy endpoint that makes the API calls
+// and keeps the API keys secure on the server side.
+
 // Initialize the OpenAI client with DeepSeek configuration
 const deepseekClient = new OpenAI({
   apiKey: DEEPSEEK_API_KEY,
   baseURL: DEEPSEEK_API_BASE,
+  dangerouslyAllowBrowser: true, // Allow running in browser environment - NOT recommended for production
 });
 
 // Define the model to use
