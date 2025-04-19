@@ -48,39 +48,70 @@ def ping():
 @app.post("/upload")
 async def upload_files(files: List[UploadFile] = File(...)):
     try:
+        print("Upload endpoint called with files:", [f.filename for f in files])
         results = []
         # Ensure Document class exists
         class_name = "Document"
-        if class_name not in client.collections.list_all():
-            client.collections.create(
-                name=class_name,
-                properties=[
-                    {"name": "filename", "data_type": "text"},
-                    {"name": "content", "data_type": "text"},
-                    {"name": "uploaded_at", "data_type": "date"}
-                ]
-            )
+        try:
+            collections = client.collections.list_all()
+            print("Available collections:", collections)
+
+            if class_name not in collections:
+                print(f"Creating collection {class_name}")
+                client.collections.create(
+                    name=class_name,
+                    properties=[
+                        # Use dataType instead of data_type for Weaviate Python client v4
+                        # dataType should be an array of strings
+                        {"name": "filename", "dataType": ["text"]},
+                        {"name": "content", "dataType": ["text"]},
+                        {"name": "uploaded_at", "dataType": ["date"]}
+                    ]
+                )
+                print(f"Collection {class_name} created successfully")
+        except Exception as collection_error:
+            print(f"Error creating/checking collection: {collection_error}")
+            traceback.print_exc()
+            return JSONResponse({"error": f"Collection error: {str(collection_error)}"}, status_code=500)
+
         for file in files:
-            raw = await file.read()
-            filename = file.filename
-            uploaded_at = datetime.datetime.utcnow().isoformat()
-            # Extract plain text from file
             try:
-                # Simple text extraction based on file extension
-                if filename.lower().endswith('.txt'):
-                    text = raw.decode(errors="ignore")
-                else:
-                    # For other file types, just use the raw content as text
-                    text = raw.decode(errors="ignore")
-            except Exception:
-                text = "[Unable to extract text from this file]"
-            obj = {
-                "filename": filename,
-                "content": text,
-                "uploaded_at": uploaded_at
-            }
-            client.collections.get("Document").data.insert(obj)
-            results.append({"filename": filename, "status": "uploaded"})
+                raw = await file.read()
+                filename = file.filename
+                uploaded_at = datetime.datetime.utcnow().isoformat()
+                print(f"Processing file: {filename}, size: {len(raw)} bytes")
+
+                # Extract plain text from file
+                try:
+                    # Simple text extraction based on file extension
+                    if filename.lower().endswith('.txt'):
+                        text = raw.decode(errors="ignore")
+                    else:
+                        # For other file types, just use the raw content as text
+                        text = raw.decode(errors="ignore")
+                except Exception as text_error:
+                    print(f"Text extraction error for {filename}: {text_error}")
+                    text = "[Unable to extract text from this file]"
+
+                # Prepare object for Weaviate
+                obj = {
+                    "filename": filename,
+                    "content": text,
+                    "uploaded_at": uploaded_at
+                }
+
+                # Insert into Weaviate
+                print(f"Inserting {filename} into Weaviate")
+                collection = client.collections.get("Document")
+                collection.data.insert(obj)
+                print(f"Successfully inserted {filename}")
+
+                results.append({"filename": filename, "status": "uploaded"})
+            except Exception as file_error:
+                print(f"Error processing file {file.filename}: {file_error}")
+                traceback.print_exc()
+                results.append({"filename": file.filename, "status": "error", "error": str(file_error)})
+
         return JSONResponse({"results": results})
     except Exception as e:
         print("UPLOAD ERROR:", e)
