@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import weaviate
+from weaviate.classes.config import Property, DataType
 from typing import List
 import datetime
 import traceback
@@ -58,14 +59,17 @@ async def upload_files(files: List[UploadFile] = File(...)):
 
             if class_name not in collections:
                 print(f"Creating collection {class_name}")
+                # Define properties using the Property class
+                properties = [
+                    Property(name="filename", data_type=DataType.TEXT),
+                    Property(name="content", data_type=DataType.TEXT),
+                    Property(name="uploaded_at", data_type=DataType.DATE),
+                ]
+
+                # Create the collection with the proper property format
                 client.collections.create(
                     name=class_name,
-                    properties=[
-                        # Use data_type (snake_case) as expected by the Weaviate API
-                        {"name": "filename", "data_type": "text"},
-                        {"name": "content", "data_type": "text"},
-                        {"name": "uploaded_at", "data_type": "date"}
-                    ]
+                    properties=properties
                 )
                 print(f"Collection {class_name} created successfully")
         except Exception as collection_error:
@@ -77,7 +81,7 @@ async def upload_files(files: List[UploadFile] = File(...)):
             try:
                 raw = await file.read()
                 filename = file.filename
-                uploaded_at = datetime.datetime.utcnow().isoformat()
+                uploaded_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
                 print(f"Processing file: {filename}, size: {len(raw)} bytes")
 
                 # Extract plain text from file
