@@ -39,30 +39,51 @@ const FileUploader = ({ onFilesUploaded }: FileUploaderProps) => {
     uploadFiles.forEach(file => formData.append('files', file));
     try {
       // Use environment variable for API URL if available, otherwise use relative path
-      const apiUrl = process.env.VITE_API_URL || '';
+      const apiUrl = import.meta.env.VITE_API_URL || '';
       const uploadUrl = apiUrl ? `${apiUrl}/upload` : '/api/upload';
 
+      console.log('API URL:', apiUrl);
+      console.log('Upload URL:', uploadUrl);
+
+      // Add CORS headers
       const response = await fetch(uploadUrl, {
         method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+        },
         body: formData,
+        mode: 'cors',
       });
-      const data = await response.json();
+
+      console.log('Response status:', response.status);
+
       if (response.ok) {
+        const data = await response.json();
         toast({
           title: 'Upload successful',
           description: `${uploadFiles.length} file(s) uploaded to Weaviate.`,
         });
       } else {
+        let errorMessage = 'An error occurred uploading files.';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.detail || errorData.error || errorMessage;
+        } catch (e) {
+          // If we can't parse the JSON, just use the status text
+          errorMessage = response.statusText || errorMessage;
+        }
+
         toast({
           title: 'Upload failed',
-          description: data.detail || 'An error occurred uploading files.',
+          description: errorMessage,
           variant: 'destructive',
         });
       }
     } catch (err) {
+      console.error('Upload error:', err);
       toast({
         title: 'Network error',
-        description: 'Could not connect to backend.',
+        description: 'Could not connect to backend. See console for details.',
         variant: 'destructive',
       });
     }

@@ -5,6 +5,8 @@ const DEEPSEEK_API_KEY = import.meta.env.VITE_DEEPSEEK_API_KEY || '';
 const DEEPSEEK_API_BASE = import.meta.env.VITE_DEEPSEEK_API_BASE || 'https://api.deepseek.com/v1';
 const BACKEND_URL = import.meta.env.VITE_API_URL || '';
 
+console.log('DeepSeek Service - Backend URL:', BACKEND_URL);
+
 // SECURITY NOTE: In a production environment, you should NOT expose API keys in the frontend.
 // A better approach would be to create a backend proxy endpoint that makes the API calls
 // and keeps the API keys secure on the server side.
@@ -34,19 +36,26 @@ export interface WeaviateDocument {
 export async function searchWeaviateDocuments(query: string): Promise<WeaviateDocument[]> {
   try {
     const searchUrl = BACKEND_URL ? `${BACKEND_URL}/search` : '/api/search';
+    console.log('Search URL:', searchUrl);
+
     const response = await fetch(searchUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
       body: JSON.stringify({ query }),
+      mode: 'cors',
     });
+
+    console.log('Search response status:', response.status);
 
     if (!response.ok) {
       throw new Error(`Search request failed with status ${response.status}`);
     }
 
     const data = await response.json();
+    console.log('Search results:', data);
     return data.results || [];
   } catch (error) {
     console.error('Error searching Weaviate:', error);
