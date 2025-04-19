@@ -10,8 +10,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "postbuild": "cp dist/index.html dist/404.html",
-    "deploy": "wrangler pages deploy dist --project-name=weaviatedemo",
-    "deploy:dev": "wrangler pages deploy dist --project-name=weaviatedemo --branch=development"
+    "deploy": "wrangler pages deploy dist --project-name=weaviatedemo --branch=feature-deepseek-ai",
+    "deploy:prod": "wrangler pages deploy dist --project-name=weaviatedemo --branch=main"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

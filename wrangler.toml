@@ -1,12 +1,11 @@
 name = "weaviatedemo"
 compatibility_date = "2025-04-19"
-pages_build_output_dir = "dist"
 
-[site]
-bucket = "./dist"
+# Pages configuration
+[pages]
+dir = "dist"
 
-[env.production]
-routes = [{pattern = "/api/*", forward = {service_binding = "backend"}}]
-
-[env.development]
-routes = [{pattern = "/api/*", forward = {service_binding = "backend"}}]
+# Routes configuration
+[[routes]]
+pattern = "/api/*"
+forward = { service_binding = "backend" }
