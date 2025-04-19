@@ -7,6 +7,7 @@ import PageLayout from '@/components/PageLayout';
 import { useFiles } from '@/contexts/FileContext';
 import { Message } from '@/types/chat';
 import { useToast } from '@/hooks/use-toast';
+import { generateChatResponse, ChatMessage } from '@/services/deepseekService';
 
 interface ChatPageProps {
   logoUrl?: string;
@@ -18,7 +19,7 @@ const ChatPage = ({ logoUrl }: ChatPageProps) => {
   const { uploadedFiles } = useFiles();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
+
   // Redirect if no files are uploaded
   useEffect(() => {
     if (uploadedFiles.length === 0) {
@@ -31,7 +32,9 @@ const ChatPage = ({ logoUrl }: ChatPageProps) => {
     }
   }, [uploadedFiles, navigate, toast]);
 
-  const handleSendMessage = (content: string) => {
+  const handleSendMessage = async (content: string) => {
+    if (!content.trim()) return;
+
     // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -39,36 +42,50 @@ const ChatPage = ({ logoUrl }: ChatPageProps) => {
       content,
       timestamp: new Date()
     };
-    
+
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
-    
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponse = generateMockResponse(content);
-      
+
+    try {
+      // Convert messages to the format expected by DeepSeek
+      const chatMessages: ChatMessage[] = messages
+        .filter(msg => msg.role === 'user' || msg.role === 'assistant')
+        .map(msg => ({
+          role: msg.role === 'user' ? 'user' : 'assistant',
+          content: msg.content
+        }));
+
+      // Add the current user message
+      chatMessages.push({
+        role: 'user',
+        content
+      });
+
+      // Generate AI response using DeepSeek
+      const aiResponseContent = await generateChatResponse(chatMessages, content);
+
+      // Add AI response
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: aiResponse,
+        content: aiResponseContent,
         timestamp: new Date()
       };
-      
+
       setMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('Error generating AI response:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to generate AI response. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
-  
-  const generateMockResponse = (query: string): string => {
-    const responses = [
-      `Based on the documents you've uploaded, I can provide information related to your query about "${query}".`,
-      `I've analyzed your documents and found relevant information about "${query}". Let me elaborate...`,
-      `The documents you shared mention "${query}" in several contexts. Here's what I found...`,
-      `According to the uploaded documents, "${query}" is discussed on pages 3-5. The key points are...`,
-    ];
-    
-    return responses[Math.floor(Math.random() * responses.length)];
-  };
+
+  // DeepSeek AI is now handling the responses
 
   return (
     <PageLayout logoUrl={logoUrl} hideFooter>
@@ -78,7 +95,7 @@ const ChatPage = ({ logoUrl }: ChatPageProps) => {
             {uploadedFiles.length} document{uploadedFiles.length !== 1 ? 's' : ''} uploaded
           </div>
         </div>
-        
+
         <div className="flex-1 flex flex-col overflow-hidden">
           <ChatWindow messages={messages} isLoading={isLoading} />
           <ChatInput onSendMessage={handleSendMessage} disabled={isLoading} />

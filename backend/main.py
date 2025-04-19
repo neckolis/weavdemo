@@ -87,4 +87,32 @@ async def upload_files(files: List[UploadFile] = File(...)):
         traceback.print_exc()
         return JSONResponse({"error": str(e)}, status_code=500)
 
-# Trivial change for redeployment
+@app.post("/search")
+async def search_documents(query: dict):
+    try:
+        # Get the query string from the request body
+        query_text = query.get("query", "")
+        if not query_text:
+            return JSONResponse({"error": "Query is required"}, status_code=400)
+
+        # Search for documents in Weaviate
+        collection = client.collections.get("Document")
+        results = collection.query.near_text(
+            query=query_text,
+            limit=5  # Return top 5 most relevant documents
+        )
+
+        # Format the results
+        formatted_results = []
+        for obj in results.objects:
+            formatted_results.append({
+                "filename": obj.properties["filename"],
+                "content": obj.properties["content"],
+                "uploaded_at": obj.properties["uploaded_at"]
+            })
+
+        return JSONResponse({"results": formatted_results})
+    except Exception as e:
+        print("SEARCH ERROR:", e)
+        traceback.print_exc()
+        return JSONResponse({"error": str(e)}, status_code=500)
