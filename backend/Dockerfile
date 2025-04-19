@@ -2,9 +2,9 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies for docling and weaviate-client (if needed)
+# Install system dependencies (if needed)
 RUN apt-get update && \
-    apt-get install -y build-essential libmagic1 && \
+    apt-get install -y build-essential && \
     rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt ./

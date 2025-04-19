@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 import weaviate
 from typing import List
 import datetime
-import docling
 import traceback
 
 print("Starting FastAPI app...")
@@ -65,11 +64,16 @@ async def upload_files(files: List[UploadFile] = File(...)):
             raw = await file.read()
             filename = file.filename
             uploaded_at = datetime.datetime.utcnow().isoformat()
-            # Use docling to extract plain text from file
+            # Extract plain text from file
             try:
-                text = docling.read(raw, filename=filename)
+                # Simple text extraction based on file extension
+                if filename.lower().endswith('.txt'):
+                    text = raw.decode(errors="ignore")
+                else:
+                    # For other file types, just use the raw content as text
+                    text = raw.decode(errors="ignore")
             except Exception:
-                text = raw.decode(errors="ignore")  # fallback
+                text = "[Unable to extract text from this file]"
             obj = {
                 "filename": filename,
                 "content": text,
