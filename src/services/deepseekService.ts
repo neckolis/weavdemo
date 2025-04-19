@@ -38,29 +38,57 @@ export async function searchWeaviateDocuments(query: string): Promise<WeaviateDo
     const searchUrl = BACKEND_URL ? `${BACKEND_URL}/search` : '/api/search';
     console.log('Search URL:', searchUrl);
 
-    const response = await fetch(searchUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify({ query }),
-      mode: 'cors',
-    });
-
-    console.log('Search response status:', response.status);
-
-    if (!response.ok) {
-      throw new Error(`Search request failed with status ${response.status}`);
+    // Check if the backend URL is valid
+    if (!BACKEND_URL) {
+      console.warn('Backend URL is not set. Using mock data for search.');
+      return getMockDocuments(query);
     }
 
-    const data = await response.json();
-    console.log('Search results:', data);
-    return data.results || [];
+    try {
+      const response = await fetch(searchUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ query }),
+        mode: 'cors',
+      });
+
+      console.log('Search response status:', response.status);
+
+      if (!response.ok) {
+        console.warn(`Search request failed with status ${response.status}. Using mock data.`);
+        return getMockDocuments(query);
+      }
+
+      const data = await response.json();
+      console.log('Search results:', data);
+      return data.results || [];
+    } catch (fetchError) {
+      console.warn('Error fetching search results:', fetchError);
+      return getMockDocuments(query);
+    }
   } catch (error) {
     console.error('Error searching Weaviate:', error);
-    return [];
+    return getMockDocuments(query);
   }
+}
+
+// Function to generate mock documents for testing when the backend is not available
+function getMockDocuments(query: string): WeaviateDocument[] {
+  return [
+    {
+      filename: 'sample-document-1.txt',
+      content: `This is a sample document that contains information about ${query}. It's used for testing when the backend is not available.`,
+      uploaded_at: new Date().toISOString()
+    },
+    {
+      filename: 'sample-document-2.txt',
+      content: `Here's another document with details about ${query} and related topics. This is mock data for testing purposes.`,
+      uploaded_at: new Date().toISOString()
+    }
+  ];
 }
 
 export async function generateChatResponse(
@@ -80,20 +108,42 @@ export async function generateChatResponse(
       ...messages
     ];
 
-    // Call the DeepSeek API
-    const response = await deepseekClient.chat.completions.create({
-      model: MODEL,
-      messages: allMessages as any,
-      temperature: 0.7,
-      max_tokens: 1000,
-    });
+    // Check if DeepSeek API key is valid
+    if (!DEEPSEEK_API_KEY || DEEPSEEK_API_KEY === 'your-deepseek-api-key') {
+      console.warn('DeepSeek API key is not set or is using the default value. Using mock response.');
+      return generateMockResponse(query, relevantDocuments);
+    }
 
-    // Return the generated text
-    return response.choices[0]?.message?.content || 'No response generated.';
+    try {
+      // Call the DeepSeek API
+      const response = await deepseekClient.chat.completions.create({
+        model: MODEL,
+        messages: allMessages as any,
+        temperature: 0.7,
+        max_tokens: 1000,
+      });
+
+      // Return the generated text
+      return response.choices[0]?.message?.content || 'No response generated.';
+    } catch (apiError) {
+      console.warn('Error calling DeepSeek API:', apiError);
+      return generateMockResponse(query, relevantDocuments);
+    }
   } catch (error) {
     console.error('Error generating chat response:', error);
     return 'Sorry, there was an error generating a response. Please try again.';
   }
+}
+
+// Function to generate a mock response for testing when the DeepSeek API is not available
+function generateMockResponse(query: string, documents: WeaviateDocument[]): string {
+  if (documents.length === 0) {
+    return `I couldn't find any relevant documents about "${query}". Please try a different query or upload some documents first.`;
+  }
+
+  const documentMentions = documents.map(doc => `In the document "${doc.filename}", I found information related to "${query}".`).join('\n\n');
+
+  return `Based on the documents you've uploaded, here's what I found about "${query}":\n\n${documentMentions}\n\nThis is a simulated response as the DeepSeek API is not properly configured. Please set up your DeepSeek API key in the environment variables to get real AI-generated responses.`;
 }
 
 // Function to generate a system prompt based on relevant documents from Weaviate

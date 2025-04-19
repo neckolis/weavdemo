@@ -44,6 +44,18 @@ const FileUploader = ({ onFilesUploaded }: FileUploaderProps) => {
 
       console.log('API URL:', apiUrl);
       console.log('Upload URL:', uploadUrl);
+      console.log('Uploading files:', uploadFiles.map(f => f.name));
+
+      // Check if backend URL is configured
+      if (!apiUrl) {
+        console.warn('Backend URL is not set. Simulating upload success.');
+        // Simulate successful upload for demo purposes
+        toast({
+          title: 'Demo Mode',
+          description: `${uploadFiles.length} file(s) would be uploaded to Weaviate in production.`,
+        });
+        return;
+      }
 
       // Add CORS headers
       const response = await fetch(uploadUrl, {
@@ -57,21 +69,45 @@ const FileUploader = ({ onFilesUploaded }: FileUploaderProps) => {
 
       console.log('Response status:', response.status);
 
+      // Try to parse the response body
+      let responseText = '';
+      let responseData = null;
+
+      try {
+        responseText = await response.text();
+        console.log('Response text:', responseText);
+
+        if (responseText) {
+          try {
+            responseData = JSON.parse(responseText);
+            console.log('Response data:', responseData);
+          } catch (parseError) {
+            console.warn('Failed to parse response as JSON:', parseError);
+          }
+        }
+      } catch (textError) {
+        console.warn('Failed to read response text:', textError);
+      }
+
       if (response.ok) {
-        const data = await response.json();
         toast({
           title: 'Upload successful',
           description: `${uploadFiles.length} file(s) uploaded to Weaviate.`,
         });
       } else {
         let errorMessage = 'An error occurred uploading files.';
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.detail || errorData.error || errorMessage;
-        } catch (e) {
-          // If we can't parse the JSON, just use the status text
-          errorMessage = response.statusText || errorMessage;
+
+        if (responseData && (responseData.detail || responseData.error)) {
+          errorMessage = responseData.detail || responseData.error;
+        } else if (responseText) {
+          // If we have response text but couldn't parse it as JSON
+          errorMessage = `Server error: ${responseText.substring(0, 100)}${responseText.length > 100 ? '...' : ''}`;
+        } else {
+          // If we couldn't get response text, use status text
+          errorMessage = `${response.status} ${response.statusText || 'Unknown Error'}`;
         }
+
+        console.error('Upload failed:', errorMessage);
 
         toast({
           title: 'Upload failed',
