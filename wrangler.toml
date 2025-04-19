@@ -1,0 +1,8 @@
+name = "weaviatedemo"
+type = "javascript"
+account_id = ""
+workers_dev = false
+compatibility_date = "2025-04-19"
+
+[env.production]
+bucket = "./dist"

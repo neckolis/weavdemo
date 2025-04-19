@@ -1,0 +1,8 @@
+
+<svg width="400" height="400" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="400" fill="none" />
+  <path d="M64 200L136 128L208 200L136 272L64 200Z" fill="#2A88F6" />
+  <path d="M192 200L264 128L336 200L264 272L192 200Z" fill="#33D6AD" />
+  <path d="M128 136L200 64L272 136L200 208L128 136Z" fill="#7A6FF0" />
+  <path d="M128 264L200 192L272 264L200 336L128 264Z" fill="#7A6FF0" />
+</svg>
