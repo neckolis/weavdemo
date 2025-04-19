@@ -1,12 +1,12 @@
 # Instructions for Pushing to GitHub
 
-This document provides instructions for pushing your code to the new GitHub repository at https://github.com/amgtrott/weaviatedemo1.
+This document provides instructions for pushing your code to the new GitHub repository at https://github.com/neckolis/weavdemo.
 
 ## Prerequisites
 
 1. Make sure you have Git installed on your machine
 2. Ensure you have a GitHub account
-3. You need to have write access to the repository https://github.com/amgtrott/weaviatedemo1
+3. You need to have write access to the repository https://github.com/neckolis/weavdemo
 
 ## Creating a Personal Access Token (PAT)
 
@@ -39,7 +39,7 @@ If you prefer to push manually:
 1. Open a terminal in the project directory
 2. Add the new remote with your PAT:
    ```
-   git remote add github-new https://YOUR_USERNAME:YOUR_PAT@github.com/amgtrott/weaviatedemo1.git
+   git remote add github-new https://YOUR_USERNAME:YOUR_PAT@github.com/neckolis/weavdemo.git
    ```
 3. Push to the new repository:
    ```

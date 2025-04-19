@@ -3,7 +3,7 @@
 # This script helps push the code to a new GitHub repository
 # You'll need to create a Personal Access Token (PAT) on GitHub first
 
-echo "This script will help you push your code to https://github.com/amgtrott/weaviatedemo1"
+echo "This script will help you push your code to https://github.com/neckolis/weavdemo"
 echo "Before continuing, make sure you have:"
 echo "1. Created the repository on GitHub"
 echo "2. Generated a Personal Access Token (PAT) with 'repo' scope"
@@ -17,7 +17,7 @@ read -sp "Enter your GitHub Personal Access Token: " token
 echo ""
 
 # Configure Git with the PAT
-git_url="https://$username:$token@github.com/amgtrott/weaviatedemo1.git"
+git_url="https://$username:$token@github.com/neckolis/weavdemo.git"
 
 # Check if the remote already exists
 if git remote | grep -q "github-new"; then
@@ -35,5 +35,5 @@ git push -u github-new main
 git remote remove github-new
 
 echo ""
-echo "Done! Your code has been pushed to https://github.com/amgtrott/weaviatedemo1"
+echo "Done! Your code has been pushed to https://github.com/neckolis/weavdemo"
 echo "You can now use this repository for deployment to Cloudflare Pages and Render."
