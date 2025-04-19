@@ -1,18 +1,12 @@
 name = "weaviatedemo"
-type = "webpack"
-account_id = "" # Add your Cloudflare account ID here
 compatibility_date = "2025-04-19"
+pages_build_output_dir = "dist"
 
 [site]
 bucket = "./dist"
-entry-point = "workers-site"
-
-[build]
-command = "npm run build"
-publish = "dist"
 
 [env.production]
-# Production-specific settings
+routes = [{pattern = "/api/*", forward = {service_binding = "backend"}}]
 
 [env.development]
-# Development-specific settings
+routes = [{pattern = "/api/*", forward = {service_binding = "backend"}}]
