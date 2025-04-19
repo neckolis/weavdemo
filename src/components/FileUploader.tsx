@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { X, Upload, FileText } from 'lucide-react';
@@ -31,8 +30,39 @@ const FileUploader = ({ onFilesUploaded }: FileUploaderProps) => {
     if (validFiles.length) {
       setFiles(prevFiles => [...prevFiles, ...validFiles]);
       onFilesUploaded(validFiles);
+      uploadFilesToBackend(validFiles);
     }
   }, [onFilesUploaded]);
+
+  const uploadFilesToBackend = async (uploadFiles: File[]) => {
+    const formData = new FormData();
+    uploadFiles.forEach(file => formData.append('files', file));
+    try {
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await response.json();
+      if (response.ok) {
+        toast({
+          title: 'Upload successful',
+          description: `${uploadFiles.length} file(s) uploaded to Weaviate.`,
+        });
+      } else {
+        toast({
+          title: 'Upload failed',
+          description: data.detail || 'An error occurred uploading files.',
+          variant: 'destructive',
+        });
+      }
+    } catch (err) {
+      toast({
+        title: 'Network error',
+        description: 'Could not connect to backend.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,

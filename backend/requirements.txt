@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+weaviate-client==4.*
+python-dotenv
+docling
+python-multipart
