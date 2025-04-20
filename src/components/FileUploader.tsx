@@ -35,8 +35,12 @@ const FileUploader = ({ onFilesUploaded }: FileUploaderProps) => {
   }, [onFilesUploaded]);
 
   const uploadFilesToBackend = async (uploadFiles: File[]) => {
+    console.log('=== UPLOAD PROCESS STARTED ===');
     const formData = new FormData();
-    uploadFiles.forEach(file => formData.append('files', file));
+    uploadFiles.forEach(file => {
+      console.log(`Adding file to FormData: ${file.name} (${file.type}, ${file.size} bytes)`);
+      formData.append('files', file);
+    });
     try {
       // Use environment variable for API URL if available, otherwise use relative path
       const apiUrl = import.meta.env.VITE_API_URL || '';
@@ -58,6 +62,10 @@ const FileUploader = ({ onFilesUploaded }: FileUploaderProps) => {
       }
 
       // Add CORS headers
+      console.log('Sending fetch request to:', uploadUrl);
+      console.log('Request mode:', 'cors');
+      console.log('Request method:', 'POST');
+
       const response = await fetch(uploadUrl, {
         method: 'POST',
         headers: {
@@ -67,19 +75,25 @@ const FileUploader = ({ onFilesUploaded }: FileUploaderProps) => {
         mode: 'cors',
       });
 
+      console.log('Response received!');
       console.log('Response status:', response.status);
+      console.log('Response status text:', response.statusText);
 
       // Try to parse the response body
       let responseText = '';
       let responseData = null;
 
       try {
+        console.log('Attempting to read response text...');
         responseText = await response.text();
+        console.log('Response text received, length:', responseText.length);
         console.log('Response text:', responseText);
 
         if (responseText) {
           try {
+            console.log('Attempting to parse response as JSON...');
             responseData = JSON.parse(responseText);
+            console.log('Successfully parsed JSON response:');
             console.log('Response data:', responseData);
           } catch (parseError) {
             console.warn('Failed to parse response as JSON:', parseError);
@@ -90,6 +104,7 @@ const FileUploader = ({ onFilesUploaded }: FileUploaderProps) => {
       }
 
       if (response.ok) {
+        console.log('Upload successful! Response was OK (status in 200-299 range)');
         toast({
           title: 'Upload successful',
           description: `${uploadFiles.length} file(s) uploaded to Weaviate.`,
@@ -107,7 +122,8 @@ const FileUploader = ({ onFilesUploaded }: FileUploaderProps) => {
           errorMessage = `${response.status} ${response.statusText || 'Unknown Error'}`;
         }
 
-        console.error('Upload failed:', errorMessage);
+        console.error('Upload failed with status:', response.status);
+        console.error('Error message:', errorMessage);
 
         toast({
           title: 'Upload failed',
@@ -116,13 +132,20 @@ const FileUploader = ({ onFilesUploaded }: FileUploaderProps) => {
         });
       }
     } catch (err) {
+      console.error('=== UPLOAD PROCESS FAILED WITH ERROR ===');
       console.error('Upload error:', err);
+      console.error('Error type:', err instanceof Error ? err.constructor.name : typeof err);
+      if (err instanceof Error) {
+        console.error('Error message:', err.message);
+        console.error('Error stack:', err.stack);
+      }
       toast({
         title: 'Network error',
         description: 'Could not connect to backend. See console for details.',
         variant: 'destructive',
       });
     }
+    console.log('=== UPLOAD PROCESS COMPLETED ===');
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({

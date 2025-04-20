@@ -9,7 +9,7 @@
     {
       "pattern": "/api/*",
       "forward": {
-        "url": "https://weaviatedemo-backend.onrender.com"
+        "url": "https://weavdemo.onrender.com"
       }
     },
     {

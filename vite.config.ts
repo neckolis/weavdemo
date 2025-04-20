@@ -35,7 +35,7 @@ export default defineConfig(({ mode }) => {
     define: {
       // Define environment variables to be used in the frontend code
       'process.env.VITE_API_URL': mode === 'production'
-        ? JSON.stringify('https://weaviatedemo-backend.onrender.com')
+        ? JSON.stringify('https://weavdemo.onrender.com')
         : JSON.stringify(''),
     }
   };
