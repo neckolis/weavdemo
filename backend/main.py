@@ -72,10 +72,11 @@ async def upload_files(files: List[UploadFile] = File(...)):
                     Property(name="uploaded_at", data_type=DataType.DATE)
                 ]
 
-                # Create the collection with the proper property format
+                # Create the collection with the proper property format and vectorizer
                 client.collections.create(
                     name=class_name,
-                    properties=properties
+                    properties=properties,
+                    vectorizer_config=weaviate.classes.config.Configure.Vectorizer.text2vec_transformers()
                 )
                 print(f"Collection {class_name} created successfully")
         except Exception as collection_error:
@@ -137,10 +138,20 @@ async def search_documents(query: dict):
 
         # Search for documents in Weaviate
         collection = client.collections.get("Document")
-        results = collection.query.near_text(
-            query=query_text,
-            limit=5  # Return top 5 most relevant documents
-        )
+        try:
+            # Try using near_text search first
+            results = collection.query.near_text(
+                query=query_text,
+                limit=5  # Return top 5 most relevant documents
+            )
+        except Exception as search_error:
+            print(f"near_text search failed: {search_error}")
+            # Fall back to BM25 search if near_text fails
+            results = collection.query.bm25(
+                query=query_text,
+                properties=["content"],
+                limit=5
+            )
 
         # Format the results
         formatted_results = []
