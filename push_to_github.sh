@@ -29,7 +29,7 @@ git remote add github-new "$git_url"
 
 # Push to the new repository
 echo "Pushing to the new repository..."
-git push -u github-new main
+git push -u github-new feature/deepseek-ai
 
 # Clean up
 git remote remove github-new

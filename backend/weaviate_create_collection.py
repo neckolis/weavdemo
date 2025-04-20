@@ -21,7 +21,7 @@ collection_schema = {
     "properties": [
         {
             "name": "text",
-            "dataType": "text",
+            "data_type": "text",
             "description": "A text property"
         }
     ]
