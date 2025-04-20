@@ -108,33 +108,48 @@ export async function generateChatResponse(
       ...messages
     ];
 
-    // Check if DeepSeek API key is valid
-    if (!DEEPSEEK_API_KEY || DEEPSEEK_API_KEY === 'your-deepseek-api-key') {
-      console.warn('DeepSeek API key is not set or is using the default value. Using mock response.');
-      console.warn('To fix this, set the VITE_DEEPSEEK_API_KEY environment variable in Cloudflare Pages.');
-      console.warn('Go to Cloudflare Pages dashboard > Settings > Environment variables and add VITE_DEEPSEEK_API_KEY with your DeepSeek API key.');
+    // Check if backend URL is valid
+    if (!BACKEND_URL) {
+      console.warn('Backend URL is not set. Using mock response.');
       return generateMockResponse(query, relevantDocuments);
     }
 
     try {
-      // Call the DeepSeek API
-      const response = await deepseekClient.chat.completions.create({
-        model: MODEL,
-        messages: allMessages as any,
-        temperature: 0.7,
-        max_tokens: 1000,
+      // Call the backend chat endpoint
+      const chatUrl = `${BACKEND_URL}/chat`;
+      console.log('Chat URL:', chatUrl);
+
+      const response = await fetch(chatUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          messages: allMessages,
+          temperature: 0.7,
+          max_tokens: 1000,
+        }),
+        mode: 'cors',
       });
 
+      console.log('Chat response status:', response.status);
+
+      if (!response.ok) {
+        console.warn(`Chat request failed with status ${response.status}. Using mock response.`);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        return generateMockResponse(query, relevantDocuments);
+      }
+
+      const data = await response.json();
+      console.log('Chat response data:', data);
+
       // Return the generated text
-      return response.choices[0]?.message?.content || 'No response generated.';
+      return data.choices[0]?.message?.content || 'No response generated.';
     } catch (apiError) {
-      console.warn('Error calling DeepSeek API:', apiError);
-      console.error('DeepSeek API Error Details:', {
-        error: apiError,
-        apiKey: DEEPSEEK_API_KEY ? 'Set (hidden for security)' : 'Not set',
-        apiBase: DEEPSEEK_API_BASE,
-        model: MODEL
-      });
+      console.warn('Error calling chat API:', apiError);
       return generateMockResponse(query, relevantDocuments);
     }
   } catch (error) {

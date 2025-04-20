@@ -1,11 +1,13 @@
 import os
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+import json
+import requests
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import weaviate
 from weaviate.classes.config import Property, DataType
-from typing import List
+from typing import List, Dict, Any
 import datetime
 import traceback
 
@@ -15,6 +17,9 @@ load_dotenv()
 
 WEAVIATE_URL = os.getenv("WEAVIATE_URL")
 WEAVIATE_API_KEY = os.getenv("WEAVIATE_API_KEY")
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+DEEPSEEK_API_BASE = os.getenv("DEEPSEEK_API_BASE", "https://api.deepseek.com/v1")
+DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
 
 app = FastAPI()
 
@@ -165,5 +170,40 @@ async def search_documents(query: dict):
         return JSONResponse({"results": formatted_results})
     except Exception as e:
         print("SEARCH ERROR:", e)
+        traceback.print_exc()
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+@app.post("/chat")
+async def chat_completion(request: Request):
+    try:
+        # Check if DeepSeek API key is configured
+        if not DEEPSEEK_API_KEY:
+            return JSONResponse({"error": "DeepSeek API key is not configured on the server"}, status_code=500)
+
+        # Get the request body
+        body = await request.json()
+
+        # Forward the request to DeepSeek API
+        headers = {
+            "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+            "Content-Type": "application/json"
+        }
+
+        # Set the model if not provided
+        if "model" not in body:
+            body["model"] = DEEPSEEK_MODEL
+
+        # Make the request to DeepSeek API
+        response = requests.post(
+            f"{DEEPSEEK_API_BASE}/chat/completions",
+            headers=headers,
+            json=body,
+            timeout=60
+        )
+
+        # Return the response from DeepSeek API
+        return JSONResponse(response.json(), status_code=response.status_code)
+    except Exception as e:
+        print("CHAT ERROR:", e)
         traceback.print_exc()
         return JSONResponse({"error": str(e)}, status_code=500)
