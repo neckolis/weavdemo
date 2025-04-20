@@ -65,11 +65,11 @@ async def upload_files(files: List[UploadFile] = File(...)):
 
             if class_name not in collections:
                 print(f"Creating collection {class_name}")
-                # Define properties using the dictionary format with dataType
+                # Define properties using the dictionary format with data_type
                 properties = [
-                    {"name": "filename", "dataType": ["text"]},
-                    {"name": "content", "dataType": ["text"]},
-                    {"name": "uploaded_at", "dataType": ["date"]}
+                    {"name": "filename", "data_type": "text"},
+                    {"name": "content", "data_type": "text"},
+                    {"name": "uploaded_at", "data_type": "date"}
                 ]
 
                 # Create the collection with the proper property format
