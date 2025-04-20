@@ -111,6 +111,8 @@ export async function generateChatResponse(
     // Check if DeepSeek API key is valid
     if (!DEEPSEEK_API_KEY || DEEPSEEK_API_KEY === 'your-deepseek-api-key') {
       console.warn('DeepSeek API key is not set or is using the default value. Using mock response.');
+      console.warn('To fix this, set the VITE_DEEPSEEK_API_KEY environment variable in Cloudflare Pages.');
+      console.warn('Go to Cloudflare Pages dashboard > Settings > Environment variables and add VITE_DEEPSEEK_API_KEY with your DeepSeek API key.');
       return generateMockResponse(query, relevantDocuments);
     }
 
@@ -127,6 +129,12 @@ export async function generateChatResponse(
       return response.choices[0]?.message?.content || 'No response generated.';
     } catch (apiError) {
       console.warn('Error calling DeepSeek API:', apiError);
+      console.error('DeepSeek API Error Details:', {
+        error: apiError,
+        apiKey: DEEPSEEK_API_KEY ? 'Set (hidden for security)' : 'Not set',
+        apiBase: DEEPSEEK_API_BASE,
+        model: MODEL
+      });
       return generateMockResponse(query, relevantDocuments);
     }
   } catch (error) {
@@ -143,7 +151,7 @@ function generateMockResponse(query: string, documents: WeaviateDocument[]): str
 
   const documentMentions = documents.map(doc => `In the document "${doc.filename}", I found information related to "${query}".`).join('\n\n');
 
-  return `Based on the documents you've uploaded, here's what I found about "${query}":\n\n${documentMentions}\n\nThis is a simulated response as the DeepSeek API is not properly configured. Please set up your DeepSeek API key in the environment variables to get real AI-generated responses.`;
+  return `Based on the documents you've uploaded, here's what I found about "${query}":\n\n${documentMentions}\n\n---\n\n**Note: This is a simulated response**\n\nThe DeepSeek API is not properly configured. To get real AI-generated responses:\n\n1. Obtain a DeepSeek API key from https://platform.deepseek.com\n2. Go to your Cloudflare Pages dashboard\n3. Navigate to Settings > Environment variables\n4. Add the following environment variables:\n   - VITE_DEEPSEEK_API_KEY: Your DeepSeek API key\n   - VITE_DEEPSEEK_API_BASE: https://api.deepseek.com/v1\n   - VITE_DEEPSEEK_MODEL: deepseek-chat\n5. Redeploy your application`;
 }
 
 // Function to generate a system prompt based on relevant documents from Weaviate
