@@ -43,6 +43,40 @@ async def startup_event():
         auth_credentials=weaviate.AuthApiKey(api_key=WEAVIATE_API_KEY)
     )
 
+    # Configure existing collections
+    try:
+        configure_existing_collections()
+    except Exception as e:
+        print(f"Error configuring existing collections: {e}")
+        traceback.print_exc()
+
+def configure_existing_collections():
+    """Configure existing collections with proper vectorizer settings."""
+    print("Checking and configuring existing collections...")
+    collections = client.collections.list_all()
+    print(f"Found collections: {collections}")
+
+    if "Document" in collections:
+        print("Configuring Document collection...")
+        try:
+            # Get the collection
+            collection = client.collections.get("Document")
+
+            # Check if vectorizer is configured
+            config = collection.config.get()
+            print(f"Current collection config: {config}")
+
+            # Update vectorizer if needed
+            if not config.vectorizer or config.vectorizer == "none":
+                print("Setting vectorizer for Document collection...")
+                collection.config.update_vectorizer(
+                    vectorizer=weaviate.classes.config.Configure.Vectorizer.text2vec_transformers()
+                )
+                print("Vectorizer updated successfully")
+        except Exception as e:
+            print(f"Error configuring Document collection: {e}")
+            traceback.print_exc()
+
 @app.get("/ping")
 def ping():
     try:
@@ -159,7 +193,7 @@ async def search_documents(query: dict):
             # Fall back to BM25 search if near_text fails
             results = collection.query.bm25(
                 query=query_text,
-                properties=["content"],
+                query_properties=["content"],
                 limit=5
             )
 
