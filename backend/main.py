@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import weaviate
-from weaviate.classes.config import Property, DataType
+# No longer using Property and DataType classes
 from typing import List
 import datetime
 import traceback
@@ -59,11 +59,11 @@ async def upload_files(files: List[UploadFile] = File(...)):
 
             if class_name not in collections:
                 print(f"Creating collection {class_name}")
-                # Define properties using the Property class
+                # Define properties using the dictionary format with dataType
                 properties = [
-                    Property(name="filename", data_type=DataType.TEXT),
-                    Property(name="content", data_type=DataType.TEXT),
-                    Property(name="uploaded_at", data_type=DataType.DATE),
+                    {"name": "filename", "dataType": ["text"]},
+                    {"name": "content", "dataType": ["text"]},
+                    {"name": "uploaded_at", "dataType": ["date"]}
                 ]
 
                 # Create the collection with the proper property format
