@@ -4,12 +4,20 @@ import requests
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.encoders import jsonable_encoder
 from dotenv import load_dotenv
 import weaviate
 from weaviate.classes.config import Property, DataType
 from typing import List, Dict, Any
 import datetime
 import traceback
+
+# Custom JSON encoder to handle datetime objects
+class CustomJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime.datetime):
+            return obj.isoformat()
+        return super().default(obj)
 
 print("Starting FastAPI app...")
 
@@ -289,7 +297,15 @@ async def search_documents(query: dict):
                     props = obj.properties
                     filename = props.get("filename", "Unknown filename")
                     content = props.get("content", "No content available")
-                    uploaded_at = props.get("uploaded_at", datetime.datetime.now(datetime.timezone.utc).isoformat())
+
+                    # Handle uploaded_at datetime properly
+                    uploaded_at = props.get("uploaded_at")
+                    if uploaded_at is None:
+                        uploaded_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
+                    elif isinstance(uploaded_at, datetime.datetime):
+                        uploaded_at = uploaded_at.isoformat()
+                    elif not isinstance(uploaded_at, str):
+                        uploaded_at = str(uploaded_at)
 
                     formatted_results.append({
                         "filename": filename,
@@ -304,11 +320,14 @@ async def search_documents(query: dict):
             print("No results found or results object is invalid")
 
         print(f"Returning {len(formatted_results)} formatted results")
-        return JSONResponse({"results": formatted_results})
+        # Use the custom JSON encoder to handle datetime objects
+        json_compatible_results = json.dumps({"results": formatted_results}, cls=CustomJSONEncoder)
+        return JSONResponse(content=json.loads(json_compatible_results))
     except Exception as e:
         print("SEARCH ERROR:", e)
         traceback.print_exc()
-        return JSONResponse({"error": str(e)}, status_code=500)
+        error_json = json.dumps({"error": str(e)}, cls=CustomJSONEncoder)
+        return JSONResponse(content=json.loads(error_json), status_code=500)
 
 @app.post("/chat")
 async def chat_completion(request: Request):
