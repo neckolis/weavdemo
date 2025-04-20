@@ -30,6 +30,8 @@ app.add_middleware(
         "https://main.weaviatedemo.pages.dev",
         "https://feature-deepseek-ai.weaviatedemo.pages.dev",
         "https://weaviatedemo.pages.dev",
+        "https://5c4880dd.weaviatedemo.pages.dev",
+        "https://*.weaviatedemo.pages.dev",
         "http://localhost:8080",
         "http://localhost:3000"
     ],
@@ -56,6 +58,17 @@ def ping():
         return {"status": "ok", "meta": meta}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/debug/env")
+def debug_env():
+    # Return masked environment variables for debugging
+    return {
+        "DEEPSEEK_API_KEY_SET": bool(DEEPSEEK_API_KEY),
+        "DEEPSEEK_API_BASE": DEEPSEEK_API_BASE,
+        "DEEPSEEK_MODEL": DEEPSEEK_MODEL,
+        "WEAVIATE_URL_SET": bool(WEAVIATE_URL),
+        "WEAVIATE_API_KEY_SET": bool(WEAVIATE_API_KEY)
+    }
 
 @app.post("/upload")
 async def upload_files(files: List[UploadFile] = File(...)):
@@ -176,12 +189,19 @@ async def search_documents(query: dict):
 @app.post("/chat")
 async def chat_completion(request: Request):
     try:
+        # Print environment variables for debugging (masked for security)
+        print("DEEPSEEK_API_KEY set:", bool(DEEPSEEK_API_KEY))
+        print("DEEPSEEK_API_BASE:", DEEPSEEK_API_BASE)
+        print("DEEPSEEK_MODEL:", DEEPSEEK_MODEL)
+
         # Check if DeepSeek API key is configured
         if not DEEPSEEK_API_KEY:
+            print("ERROR: DeepSeek API key is not configured on the server")
             return JSONResponse({"error": "DeepSeek API key is not configured on the server"}, status_code=500)
 
         # Get the request body
         body = await request.json()
+        print("Chat request body:", json.dumps(body))
 
         # Forward the request to DeepSeek API
         headers = {
@@ -192,8 +212,10 @@ async def chat_completion(request: Request):
         # Set the model if not provided
         if "model" not in body:
             body["model"] = DEEPSEEK_MODEL
+            print("Using model:", body["model"])
 
         # Make the request to DeepSeek API
+        print(f"Sending request to {DEEPSEEK_API_BASE}/chat/completions")
         response = requests.post(
             f"{DEEPSEEK_API_BASE}/chat/completions",
             headers=headers,
@@ -201,8 +223,12 @@ async def chat_completion(request: Request):
             timeout=60
         )
 
+        print("DeepSeek API response status:", response.status_code)
+
         # Return the response from DeepSeek API
-        return JSONResponse(response.json(), status_code=response.status_code)
+        response_json = response.json()
+        print("DeepSeek API response:", json.dumps(response_json))
+        return JSONResponse(response_json, status_code=response.status_code)
     except Exception as e:
         print("CHAT ERROR:", e)
         traceback.print_exc()
