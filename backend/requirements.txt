@@ -3,3 +3,4 @@ uvicorn
 weaviate-client==4.*
 python-dotenv
 python-multipart
+requests
