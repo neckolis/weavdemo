@@ -69,13 +69,28 @@ def configure_existing_collections():
             # Update vectorizer if needed
             if not config.vectorizer or config.vectorizer == "none":
                 print("Setting vectorizer for Document collection...")
-                collection.config.update_vectorizer(
-                    vectorizer=weaviate.classes.config.Configure.Vectorizer.text2vec_transformers()
-                )
-                print("Vectorizer updated successfully")
+                try:
+                    collection.config.update_vectorizer(
+                        vectorizer=weaviate.classes.config.Configure.Vectorizer.text2vec_transformers()
+                    )
+                    print("Vectorizer updated successfully")
+                except Exception as vectorizer_error:
+                    print(f"Error updating vectorizer: {vectorizer_error}")
+
+                    # Try alternative vectorizer
+                    try:
+                        print("Trying alternative vectorizer...")
+                        collection.config.update_vectorizer(
+                            vectorizer=weaviate.classes.config.Configure.Vectorizer.none()
+                        )
+                        print("Set to 'none' vectorizer successfully")
+                    except Exception as alt_error:
+                        print(f"Error setting alternative vectorizer: {alt_error}")
         except Exception as e:
             print(f"Error configuring Document collection: {e}")
             traceback.print_exc()
+    else:
+        print("Document collection does not exist, will be created when files are uploaded")
 
 @app.get("/ping")
 def ping():
@@ -117,11 +132,29 @@ async def upload_files(files: List[UploadFile] = File(...)):
                 ]
 
                 # Create the collection with the proper property format and vectorizer
-                client.collections.create(
-                    name=class_name,
-                    properties=properties,
-                    vectorizer_config=weaviate.classes.config.Configure.Vectorizer.text2vec_transformers()
-                )
+                try:
+                    print("Creating collection with text2vec_transformers vectorizer...")
+                    client.collections.create(
+                        name=class_name,
+                        properties=properties,
+                        vectorizer_config=weaviate.classes.config.Configure.Vectorizer.text2vec_transformers()
+                    )
+                    print("Collection created successfully with text2vec_transformers")
+                except Exception as vectorizer_error:
+                    print(f"Error creating collection with text2vec_transformers: {vectorizer_error}")
+
+                    # Try with a different vectorizer
+                    try:
+                        print("Creating collection with 'none' vectorizer...")
+                        client.collections.create(
+                            name=class_name,
+                            properties=properties,
+                            vectorizer_config=weaviate.classes.config.Configure.Vectorizer.none()
+                        )
+                        print("Collection created successfully with 'none' vectorizer")
+                    except Exception as none_error:
+                        print(f"Error creating collection with 'none' vectorizer: {none_error}")
+                        raise
                 print(f"Collection {class_name} created successfully")
         except Exception as collection_error:
             print(f"Error creating/checking collection: {collection_error}")
@@ -177,35 +210,100 @@ async def search_documents(query: dict):
     try:
         # Get the query string from the request body
         query_text = query.get("query", "")
+        print(f"\n\n=== SEARCH REQUEST ===\nQuery: {query_text}")
+
         if not query_text:
+            print("Error: Query is empty")
             return JSONResponse({"error": "Query is required"}, status_code=400)
 
-        # Search for documents in Weaviate
+        # Check if Document collection exists
+        collections = client.collections.list_all()
+        print(f"Available collections: {collections}")
+
+        if "Document" not in collections:
+            print("Error: Document collection does not exist")
+            return JSONResponse({"error": "Document collection does not exist"}, status_code=500)
+
+        # Get collection info
         collection = client.collections.get("Document")
+        config = collection.config.get()
+        print(f"Collection config: {config}")
+
+        # Check if there are any objects in the collection
         try:
-            # Try using near_text search first
-            results = collection.query.near_text(
+            count = collection.query.fetch_objects(limit=1)
+            print(f"Collection has objects: {len(count.objects) > 0}")
+            if len(count.objects) > 0:
+                print(f"Sample object: {count.objects[0].properties}")
+        except Exception as count_error:
+            print(f"Error counting objects: {count_error}")
+
+        # Try different search methods
+        results = None
+
+        # Try using hybrid search first (combines vector and keyword search)
+        try:
+            print("Attempting hybrid search...")
+            results = collection.query.hybrid(
                 query=query_text,
-                limit=5  # Return top 5 most relevant documents
-            )
-        except Exception as search_error:
-            print(f"near_text search failed: {search_error}")
-            # Fall back to BM25 search if near_text fails
-            results = collection.query.bm25(
-                query=query_text,
-                query_properties=["content"],
+                alpha=0.5,  # Balance between vector and keyword search
                 limit=5
             )
+            print("Hybrid search successful")
+        except Exception as hybrid_error:
+            print(f"Hybrid search failed: {hybrid_error}")
+
+            # Try using BM25 search if hybrid search fails
+            try:
+                print("Attempting BM25 search...")
+                results = collection.query.bm25(
+                    query=query_text,
+                    query_properties=["content"],
+                    limit=5
+                )
+                print("BM25 search successful")
+            except Exception as bm25_error:
+                print(f"BM25 search failed: {bm25_error}")
+
+                # Try using get_all as a last resort
+                try:
+                    print("Attempting to get all objects...")
+                    results = collection.query.fetch_objects(limit=5)
+                    print("Get all objects successful")
+                except Exception as get_error:
+                    print(f"Get all objects failed: {get_error}")
+                    raise Exception("All search methods failed")
 
         # Format the results
         formatted_results = []
-        for obj in results.objects:
-            formatted_results.append({
-                "filename": obj.properties["filename"],
-                "content": obj.properties["content"],
-                "uploaded_at": obj.properties["uploaded_at"]
-            })
+        if results and hasattr(results, 'objects') and results.objects:
+            print(f"Found {len(results.objects)} results")
+            for obj in results.objects:
+                try:
+                    # Check if the object has the required properties
+                    if not hasattr(obj, 'properties'):
+                        print(f"Object has no properties: {obj}")
+                        continue
 
+                    # Get the properties safely
+                    props = obj.properties
+                    filename = props.get("filename", "Unknown filename")
+                    content = props.get("content", "No content available")
+                    uploaded_at = props.get("uploaded_at", datetime.datetime.now(datetime.timezone.utc).isoformat())
+
+                    formatted_results.append({
+                        "filename": filename,
+                        "content": content,
+                        "uploaded_at": uploaded_at
+                    })
+                    print(f"Added result: {filename}")
+                except Exception as format_error:
+                    print(f"Error formatting result: {format_error}")
+                    traceback.print_exc()
+        else:
+            print("No results found or results object is invalid")
+
+        print(f"Returning {len(formatted_results)} formatted results")
         return JSONResponse({"results": formatted_results})
     except Exception as e:
         print("SEARCH ERROR:", e)
