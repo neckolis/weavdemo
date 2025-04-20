@@ -20,17 +20,15 @@ const ChatPage = ({ logoUrl }: ChatPageProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Redirect if no files are uploaded
+  // Show a warning if no files are uploaded, but don't redirect
   useEffect(() => {
     if (uploadedFiles.length === 0) {
       toast({
-        title: "No documents found",
-        description: "Please upload documents before chatting.",
-        variant: "destructive",
+        title: "No documents uploaded in this session",
+        description: "You can still chat with previously uploaded documents.",
       });
-      navigate('/');
     }
-  }, [uploadedFiles, navigate, toast]);
+  }, []);
 
   const handleSendMessage = async (content: string) => {
     if (!content.trim()) return;

@@ -16,17 +16,17 @@ const LandingPage = ({ logoUrl }: LandingPageProps) => {
   const { addFiles, uploadedFiles } = useFiles();
   const { toast } = useToast();
   const navigate = useNavigate();
-  
+
   const handleFilesUploaded = (files: File[]) => {
     addFiles(files);
-    
+
     if (files.length > 0) {
       setIsUploading(true);
-      
+
       // Simulate processing
       setTimeout(() => {
         setIsUploading(false);
-        
+
         toast({
           title: "Files uploaded successfully",
           description: `${files.length} file(s) uploaded and processed.`,
@@ -34,7 +34,7 @@ const LandingPage = ({ logoUrl }: LandingPageProps) => {
       }, 1500);
     }
   };
-  
+
   const handleStartChatting = () => {
     navigate('/chat');
   };
@@ -50,21 +50,19 @@ const LandingPage = ({ logoUrl }: LandingPageProps) => {
             Start by uploading your documents to begin chatting with them using advanced AI
           </p>
         </div>
-        
+
         <div className="max-w-3xl mx-auto">
           <FileUploader onFilesUploaded={handleFilesUploaded} />
-          
-          {uploadedFiles.length > 0 && (
-            <div className="mt-10 text-center">
-              <Button 
-                size="lg" 
-                onClick={handleStartChatting}
-                disabled={isUploading}
-              >
-                {isUploading ? 'Processing...' : 'Start Chatting'}
-              </Button>
-            </div>
-          )}
+
+          <div className="mt-10 text-center">
+            <Button
+              size="lg"
+              onClick={handleStartChatting}
+              disabled={isUploading}
+            >
+              {isUploading ? 'Processing...' : uploadedFiles.length > 0 ? 'Start Chatting' : 'Chat with Existing Documents'}
+            </Button>
+          </div>
         </div>
       </div>
     </PageLayout>
