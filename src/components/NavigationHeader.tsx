@@ -2,6 +2,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import LogoDisplay from './LogoDisplay';
+import { Settings } from 'lucide-react';
 
 interface NavigationHeaderProps {
   logoUrl?: string;
@@ -14,13 +15,13 @@ const NavigationHeader = ({ logoUrl }: NavigationHeaderProps) => {
         <div className="flex items-center gap-8">
           <LogoDisplay logoUrl={logoUrl} className="h-10" />
           <nav className="hidden sm:flex items-center gap-4">
-            <Link 
+            <Link
               to="/"
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               Upload Files
             </Link>
-            <Link 
+            <Link
               to="/chat"
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
@@ -28,14 +29,26 @@ const NavigationHeader = ({ logoUrl }: NavigationHeaderProps) => {
             </Link>
           </nav>
         </div>
-        
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => window.open('https://weaviate.io/developers/weaviate/quickstart', '_blank')}
-        >
-          Documentation
-        </Button>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            asChild
+          >
+            <Link to="/settings" title="Settings">
+              <Settings className="h-4 w-4" />
+              <span className="sr-only">Settings</span>
+            </Link>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.open('https://weaviate.io/developers/weaviate/quickstart', '_blank')}
+          >
+            Documentation
+          </Button>
+        </div>
       </div>
     </header>
   );
