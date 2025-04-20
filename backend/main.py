@@ -26,15 +26,7 @@ app = FastAPI()
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://main.weaviatedemo.pages.dev",
-        "https://feature-deepseek-ai.weaviatedemo.pages.dev",
-        "https://weaviatedemo.pages.dev",
-        "https://5c4880dd.weaviatedemo.pages.dev",
-        "https://*.weaviatedemo.pages.dev",
-        "http://localhost:8080",
-        "http://localhost:3000"
-    ],
+    allow_origins=["*"],  # Allow all origins for now to fix CORS issues
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
